@@ -30,20 +30,8 @@ if st.button("🪄 Generar mi Menú Semanal", type="primary"):
         try:
             genai.configure(api_key=api_key)
             
-            # --- MAGIA AQUI: Buscar automáticamente un modelo que funcione ---
-            modelos_disponibles = []
-            for m in genai.list_models():
-                if 'generateContent' in m.supported_generation_methods:
-                    modelos_disponibles.append(m.name)
-            
-            if not modelos_disponibles:
-                st.error("Tu API Key no tiene modelos de generación de texto habilitados. Verifica tu cuenta de Google AI Studio.")
-                st.stop()
-            
-            # Usar el primer modelo disponible que la API nos permita usar
-            modelo_elegido = modelos_disponibles[0]
-            model = genai.GenerativeModel(modelo_elegido)
-            # ---------------------------------------------------------------
+            # Usamos exactamente el modelo que pidió Google en el mensaje de error
+            model = genai.GenerativeModel('gemini-3.8-flash')
 
             prompt = f"""
             Eres un chef experto. El usuario tiene estos ingredientes: {ingredientes_usuario}.
@@ -90,4 +78,4 @@ if st.button("🪄 Generar mi Menú Semanal", type="primary"):
                     st.checkbox(item, key=item)
 
         except Exception as e:
-            st.error(f"Ocurrió un error al procesar la solicitud con el modelo {modelo_elegido}: {e}")
+            st.error(f"Ocurrió un error al procesar la solicitud: {e}")
