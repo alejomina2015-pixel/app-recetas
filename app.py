@@ -31,7 +31,7 @@ if st.button("🪄 Generar mi Menú Semanal", type="primary"):
         try:
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel(
-                "gemini-1.5-flash",
+                "gemini-1.5-flash-latest,
                 generation_config={"response_mime_type": "application/json"},
             )
 
