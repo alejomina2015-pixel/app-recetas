@@ -8,7 +8,7 @@ st.set_page_config(page_title="Menú Inteligente", page_icon="🍳", layout="cen
 st.title("🍳 Generador de Menú y Supermercado")
 st.write("Dime qué tienes en casa y armaré 3 recetas, más la lista exacta de lo que te falta comprar.")
 
-# Configuración de la API Key (En producción, usa st.secrets)
+# Configuración de la API Key
 api_key = st.sidebar.text_input("Ingresa tu API Key de Gemini:", type="password")
 
 # Input del usuario
@@ -26,13 +26,24 @@ if st.button("🪄 Generar mi Menú Semanal", type="primary"):
         st.warning("⚠️ Necesito saber qué ingredientes tienes.")
         st.stop()
 
-    with st.spinner("Creando recetas y calculando tu lista de compras..."):
+    with st.spinner("Conectando con la IA y calculando tu lista de compras..."):
         try:
-            # Configurar el cliente de IA
             genai.configure(api_key=api_key)
             
-            # Usamos el modelo estándar global
-            model = genai.GenerativeModel('gemini-pro')
+            # --- MAGIA AQUI: Buscar automáticamente un modelo que funcione ---
+            modelos_disponibles = []
+            for m in genai.list_models():
+                if 'generateContent' in m.supported_generation_methods:
+                    modelos_disponibles.append(m.name)
+            
+            if not modelos_disponibles:
+                st.error("Tu API Key no tiene modelos de generación de texto habilitados. Verifica tu cuenta de Google AI Studio.")
+                st.stop()
+            
+            # Usar el primer modelo disponible que la API nos permita usar
+            modelo_elegido = modelos_disponibles[0]
+            model = genai.GenerativeModel(modelo_elegido)
+            # ---------------------------------------------------------------
 
             prompt = f"""
             Eres un chef experto. El usuario tiene estos ingredientes: {ingredientes_usuario}.
@@ -51,7 +62,6 @@ if st.button("🪄 Generar mi Menú Semanal", type="primary"):
             }}
             """
             
-            # Llamada a la API
             respuesta = model.generate_content(prompt)
             
             # Limpiamos el texto por si la IA responde con formato de código
@@ -80,4 +90,4 @@ if st.button("🪄 Generar mi Menú Semanal", type="primary"):
                     st.checkbox(item, key=item)
 
         except Exception as e:
-            st.error(f"Ocurrió un error al procesar la solicitud: {e}")
+            st.error(f"Ocurrió un error al procesar la solicitud con el modelo {modelo_elegido}: {e}")
