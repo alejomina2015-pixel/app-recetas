@@ -29,30 +29,36 @@ if st.button("🪄 Generar mi Menú Semanal", type="primary"):
 
     with st.spinner("Creando recetas y calculando tu lista de compras..."):
         try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel(
-                "gemini-1.5-flash-latest",
-                generation_config={"response_mime_type": "application/json"},
-            )
+            # Configurar el cliente de IA
+        genai.configure(api_key=api_key)
+        
+        # Usamos el modelo estándar global
+        model = genai.GenerativeModel('gemini-pro')
 
-            prompt = f"""
-            Eres un chef experto. El usuario tiene estos ingredientes: {ingredientes_usuario}.
-            Crea un menú de 3 recetas prácticas priorizando lo que ya tiene.
-
-            Devuelve un JSON estricto con esta estructura exacta:
-            {{
-                "menu": [
-                    {{
-                        "nombre": "Nombre del plato",
-                        "tiempo": "15 min",
-                        "pasos": ["Paso 1", "Paso 2"]
-                    }}
-                ],
-                "lista_compras": ["Ingrediente a comprar - Cantidad"]
-            }}
-            """
-
-            respuesta = model.generate_content(prompt)
+        prompt = f"""
+        Eres un chef experto. El usuario tiene estos ingredientes: {ingredientes_usuario}.
+        Crea un menú de 3 recetas prácticas priorizando lo que ya tiene.
+        
+        Devuelve un JSON estricto con esta estructura exacta, sin texto extra y sin usar bloques de código Markdown:
+        {{
+            "menu": [
+                {{
+                    "nombre": "Nombre del plato",
+                    "tiempo": "15 min",
+                    "pasos": ["Paso 1", "Paso 2"]
+                }}
+            ],
+            "lista_compras": ["Ingrediente a comprar - Cantidad"]
+        }}
+        """
+        
+        # Llamada a la API
+        respuesta = model.generate_content(prompt)
+        
+        # Limpiamos el texto por si la IA responde con formato de código (```json ... ```)
+        texto_limpio = respuesta.text.replace('```json', '').replace('```', '').strip()
+        
+        datos = json.loads(texto_limpio)
             datos = json.loads(respuesta.text)
 
             st.header("🍽️ Tu Menú")
