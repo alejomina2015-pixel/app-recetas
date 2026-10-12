@@ -2,16 +2,20 @@ import streamlit as st
 import google.generativeai as genai
 import json
 
-# Configuración de la página (ahora usamos layout="wide" para aprovechar la pantalla)
+# Configuración de la página
 st.set_page_config(page_title="Menú Inteligente", page_icon="🍳", layout="wide")
 
-# --- BARRA LATERAL (CONFIGURACIÓN Y FILTROS) ---
+# --- CONEXIÓN SEGURA A LA API ---
+# Tomamos la clave directamente de la caja fuerte de Streamlit
+try:
+    api_key = st.secrets["GEMINI_API_KEY"]
+    genai.configure(api_key=api_key)
+except KeyError:
+    st.error("Error: No se encontró la API Key en los secretos de Streamlit.")
+    st.stop()
+
+# --- BARRA LATERAL (Solo Filtros, ya no pedimos clave) ---
 with st.sidebar:
-    st.header("⚙️ Configuración")
-    api_key = st.text_input("Ingresa tu API Key de Gemini:", type="password")
-    
-    st.divider()
-    
     st.header("🍽️ Preferencias")
     personas = st.number_input("¿Para cuántas personas?", min_value=1, max_value=10, value=2)
     dieta = st.selectbox("Tipo de dieta", ["Ninguna", "Vegetariana", "Vegana", "Sin Gluten", "Keto"])
@@ -28,20 +32,14 @@ ingredientes_usuario = st.text_area(
 )
 
 if st.button("🪄 Generar mi Menú Semanal", type="primary"):
-    if not api_key:
-        st.warning("⚠️ Por favor, ingresa tu API Key en la barra lateral.")
-        st.stop()
-    
     if not ingredientes_usuario:
         st.warning("⚠️ Necesito saber qué ingredientes tienes.")
         st.stop()
 
     with st.spinner("Creando recetas mágicas y calculando porciones..."):
         try:
-            genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-3.8-flash')
 
-            # El prompt ahora incluye el número de personas y la dieta
             prompt = f"""
             Eres un chef experto. El usuario tiene estos ingredientes: {ingredientes_usuario}.
             Debes crear un menú de 3 recetas prácticas para {personas} personas.
@@ -68,7 +66,7 @@ if st.button("🪄 Generar mi Menú Semanal", type="primary"):
             st.divider()
 
             # --- RENDERIZADO EN COLUMNAS ---
-            col1, col2 = st.columns([2, 1]) # La columna del menú será más ancha que la del supermercado
+            col1, col2 = st.columns([2, 1])
 
             with col1:
                 st.header("🍽️ Tu Menú")
@@ -89,4 +87,4 @@ if st.button("🪄 Generar mi Menú Semanal", type="primary"):
                         st.checkbox(item, key=item)
 
         except Exception as e:
-            st.error(f"Ocurrió un error al procesar la solicitud. Intenta generar de nuevo o revisa tus ingredientes.")
+            st.error("Ocurrió un error al procesar la solicitud. Intenta generar de nuevo o revisa tus ingredientes.")
